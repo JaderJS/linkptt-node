@@ -18,14 +18,13 @@ export class Audio {
     private speak: Speaker
     private config: Config
     private ffmpeg: any
-    private sendFrom: string
-
 
     public constructor(sampleRate?: number, bitWidth?: number, channels?: number) {
-        // this.config.sampleRate = sampleRate || 48000
-        // this.config.bitWidth = bitWidth || 16
-        // this.config.channels = channels || 1
-
+        this.config = {
+            sampleRate: sampleRate || 48000,
+            channels: channels || 1,
+            bitWidth: bitWidth || 16
+        }
         this.opus = new OpusEncoder(8000, 1)
         this.mic = new Microphone({
             rate: 8000,
@@ -50,8 +49,16 @@ export class Audio {
 
     }
 
-    public start() {        
-        this.mic.startRecording().pipe(this.ffmpeg.stdin)
+    public start() {
+        try {
+            this.mic.startRecording().pipe(this.ffmpeg.stdin)
+        } catch (error) { log(error) }
+    }
+    public stop() {
+        
+        this.mic.stopRecording()        
+        this.ffmpeg.stdin.end()
+        this.ffmpeg.kill('SIGINT')
     }
 
     public emitAudio(chunk: Buffer) {
@@ -69,7 +76,7 @@ export class Audio {
                 const encoded = this.opus.encode(chunk)
                 callback(encoded)
             } catch (error) {
-                log(`[FFMPEG] - error processing audio `, error)
+                // log(`[FFMPEG] - error processing audio `, error)
             }
         })
     }

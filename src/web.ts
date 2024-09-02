@@ -3,28 +3,38 @@ import { io, Socket } from "socket.io-client"
 export class Web {
     private socket: Socket
     private url: string
+    public isConnected: boolean
 
     constructor(url: string, token: string) {
+        this.isConnected = false
         this.url = url
-        this.socket = io(this.url, { auth: { token: token } })
-        this.start()
+        this.socket = io(this.url, {
+            auth: { token: token },
+        })
+        this.setup()
     }
 
-    private start(): void {
+    private setup() {
         this.socket.on("connect", () => {
             console.log("Connected!")
+            this.isConnected = true
         })
         this.socket.on("disconnect", () => {
-            console.log("Disconnected!")
+            console.log("Disconnected!!")
+            this.isConnected = false
+        })
+        this.socket.on("connect_error", (error) => {
+            console.error(error)
         })
     }
 
-    public transmitter(event: string, data: Object | string) {
-        this.socket.emit(event, data)
-    }
 
-    public transmission(msg: string): void {
-        this.socket.emit("message", msg)
+    public transmitter(event: string, data: any) {
+        if (!this.isConnected) {
+            console.log(`Disconnected the server, please verify your connection`)
+            return
+        }
+        this.socket.emit(event, data)   
     }
 
     public receiver(event: string, callback: (data: any) => void): void {

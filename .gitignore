@@ -1,3 +1,5 @@
 *.env
+*.wav
+*.mp3
 /node_modules
 /db
