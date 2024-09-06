@@ -79,9 +79,9 @@ export class LinkPTT {
         const stream = createReadStream(path, { highWaterMark: 8 * 160 })
         stream.on("data", (chunk: Buffer) => {
             try {
-                // this.web.transmitter('audio:chunk:wav', chunk)
-                const encoded = this.opus.encode(chunk)
-                this.web.transmitter('audio:chunk', encoded)
+                this.web.transmitter('audio:chunk:wav', chunk)
+                // const encoded = this.opus.encode(chunk)
+                // this.web.transmitter('audio:chunk', encoded)
             } catch (error) {
                 console.error(`Error opus`, error)
             }

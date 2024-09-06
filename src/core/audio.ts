@@ -1,4 +1,3 @@
-import { AudioContext, OscillatorNode, GainNode } from "node-web-audio-api"
 import { createWriteStream, WriteStream, createReadStream } from "node:fs"
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process"
 import EventEmitter from "node:events"
@@ -9,7 +8,6 @@ export class Audio extends EventEmitter {
 
     private mic?: ChildProcessWithoutNullStreams
     private speaker_: Speaker
-    private speaker: ChildProcessWithoutNullStreams
     private writeStreams: WriteStream
     private path: string
     private system: "win" | "darwin" | "linux"
@@ -19,14 +17,6 @@ export class Audio extends EventEmitter {
         this.path = `audio.wav`
         this.system = os.type() == "Darwin" ? "darwin" : os.type().indexOf('Windows') > -1 ? "win" : "linux"
         this.writeStreams = createWriteStream(this.path)
-
-        const speakerOptions = [
-            '-r', '48000',    // Taxa de amostragem de 48 kHz
-            '-b', '16',       // Profundidade de bits
-            '-c', '1'         // 1 canal (mono)
-        ];
-
-        this.speaker = spawn('sox', ['-', '-d', ...speakerOptions]);
         this.speaker_ = new Speaker({ channels: 1, bitDepth: 16, sampleRate: 48000 })
     }
 
