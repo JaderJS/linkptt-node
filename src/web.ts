@@ -20,11 +20,11 @@ export class Web {
             this.isConnected = true
         })
         this.socket.on("disconnect", () => {
-            console.log("Disconnected!!")
+            console.log("User is disconnected")
             this.isConnected = false
         })
         this.socket.on("connect_error", (error) => {
-            console.error(error)
+            console.error(error.message)
         })
     }
 
@@ -34,7 +34,7 @@ export class Web {
             console.log(`Disconnected the server, please verify your connection`)
             return
         }
-        this.socket.emit(event, data)   
+        this.socket.emit(event, data)
     }
 
     public receiver(event: string, callback: (data: any) => void): void {

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "main.ts",
   "scripts": {
-    "dev": "tsx src/core/audio.ts",
+    "dev": "tsx watch --env-file .env src/node.ts",
     "receiver": "tsx watch --env-file .env src/test/receiver.ts",
     "transmitter": "tsx watch --env-file .env src/test/transmitter.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -16,6 +16,7 @@
     "@types/debug": "^4.1.12",
     "axios": "^1.7.4",
     "debug": "^4.3.6",
+    "onoff": "^6.0.3",
     "socket.io-client": "^4.7.5",
     "speaker": "^0.5.5",
     "tsx": "^4.17.0",

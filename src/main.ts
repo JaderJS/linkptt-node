@@ -3,6 +3,7 @@ import { Audio } from "@/core/audio"
 import { server } from "@/core/axios"
 import { OpusEncoder } from '@discordjs/opus'
 import { createWriteStream, WriteStream, createReadStream } from "node:fs"
+import config from "config"
 
 type TransmissionProps = {
     from: string,
@@ -11,10 +12,6 @@ type TransmissionProps = {
 
 type ReceiverProps = {
     to: string
-}
-
-type Config = {
-    updateLocation: number
 }
 
 type User = {
@@ -30,28 +27,22 @@ type Token = {
 }
 
 export class LinkPTT {
-    private config: Config
     private audio: Audio
     private web: Web
     private opus: OpusEncoder
-    private token: string
 
-    constructor({ token, config }: { token: string, config?: Config }) {
-        this.token = token
+    constructor({ token }: { token: string }) {
         this.audio = new Audio()
-        this.web = new Web("http://localhost:5050", token)
-        this.config = {
-            updateLocation: config?.updateLocation || 5000
-        }
-        this.setup()
+        this.web = new Web(config.URL, token)
         this.opus = new OpusEncoder(48000, 1)
+        this.setup()
     }
 
     private locationHandlers(ms: number) {
         setInterval(() => {
             const location = {
-                latitude: "00.000000",
-                longitude: "00.000000",
+                latitude: "-10.8134",
+                longitude: "-55.4554",
                 rssi: 0.0
             }
             this.web.transmitter("msg:location", location)
@@ -60,13 +51,17 @@ export class LinkPTT {
 
     private setup() {
         setTimeout(() => {
-            this.web.receiver("audio:chunk", (chunk: Buffer) => {
+            this.web.receiver("audio:chunk:web", (chunk: Buffer) => {
                 try {
                     // const decoded = this.opus.decode(chunk)
                     this.audio.getSpeakerStream().write(chunk)
                 } catch (error) {
                     console.error(error)
                 }
+            })
+
+            this.web.receiver('ping:node', callback => {
+                callback()
             })
 
             this.locationHandlers(60000)
@@ -76,7 +71,8 @@ export class LinkPTT {
     public sender(path: string, props: TransmissionProps) {
 
         this.start(props)
-        const stream = createReadStream(path, { highWaterMark: 8 * 160 })
+        //  const stream = createReadStream(path, { highWaterMark: 8 * 160 })
+        const stream = createReadStream(path)
         stream.on("data", (chunk: Buffer) => {
             try {
                 this.web.transmitter('audio:chunk:wav', chunk)
@@ -102,6 +98,7 @@ export class LinkPTT {
 
     }
 
+
     public start(props: TransmissionProps) {
         this.web.transmitter("audio:start", props)
     }
@@ -110,4 +107,5 @@ export class LinkPTT {
         this.web.transmitter("audio:stop", props)
     }
 }
+
 
