@@ -1,4 +1,6 @@
 import { io, Socket } from "socket.io-client"
+import { SendProps, TransmissionProps } from "./types"
+import { EVENTS } from "./constants/constants"
 
 export class Web {
     private socket: Socket
@@ -39,6 +41,16 @@ export class Web {
 
     public receiver(event: string, callback: (data: any) => void): void {
         this.socket.on(event, callback)
+    }
+
+    public start({ fromCuid, type }: SendProps) {
+        if (!this.isConnected) {
+            console.log(`Disconnected the server, please verify your connection`)
+            return
+        }
+        const data: TransmissionProps = { fromCuid, type, sendBy: {} }
+
+        this.socket.emit(EVENTS.START, data)
     }
 
 }

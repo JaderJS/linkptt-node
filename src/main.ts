@@ -4,11 +4,9 @@ import { server } from "@/core/axios"
 import { OpusEncoder } from '@discordjs/opus'
 import { createWriteStream, WriteStream, createReadStream } from "node:fs"
 import config from "config"
+import { getLocation } from "./utils/utils"
+import { SendProps, TransmissionProps } from "./types"
 
-type TransmissionProps = {
-    from: string,
-    type: "channel" | "user"
-}
 
 type ReceiverProps = {
     to: string
@@ -38,11 +36,12 @@ export class LinkPTT {
         this.setup()
     }
 
-    private locationHandlers(ms: number) {
+    private async locationHandlers(ms: number) {
+        const point = await getLocation()
         setInterval(() => {
             const location = {
-                latitude: "-10.8134",
-                longitude: "-55.4554",
+                latitude: point[0],
+                longitude: point[1],
                 rssi: 0.0
             }
             this.web.transmitter("msg:location", location)
@@ -51,7 +50,7 @@ export class LinkPTT {
 
     private setup() {
         setTimeout(() => {
-            this.web.receiver("audio:chunk:web", (chunk: Buffer) => {
+            this.web.receiver("audio:chunk:node", (chunk: Buffer) => {
                 try {
                     // const decoded = this.opus.decode(chunk)
                     this.audio.getSpeakerStream().write(chunk)
@@ -68,14 +67,14 @@ export class LinkPTT {
         }, 1000)
     }
 
-    public sender(path: string, props: TransmissionProps) {
+    public send(path: string, { fromCuid, type }: SendProps) {
 
-        this.start(props)
-        //  const stream = createReadStream(path, { highWaterMark: 8 * 160 })
+        this.start({ fromCuid, type })
+        //  const stream = createReadStream(path, { highWaterMark: 8 * 16 })
         const stream = createReadStream(path)
         stream.on("data", (chunk: Buffer) => {
             try {
-                this.web.transmitter('audio:chunk:wav', chunk)
+                this.web.transmitter('audio:chunk:node', chunk)
                 // const encoded = this.opus.encode(chunk)
                 // this.web.transmitter('audio:chunk', encoded)
             } catch (error) {
@@ -83,7 +82,7 @@ export class LinkPTT {
             }
         })
         stream.on("end", () => {
-            this.stop(props)
+            this.stop({ fromCuid, type })
         })
 
     }
@@ -99,11 +98,11 @@ export class LinkPTT {
     }
 
 
-    public start(props: TransmissionProps) {
+    public start(props: SendProps) {
         this.web.transmitter("audio:start", props)
     }
 
-    public stop(props: TransmissionProps) {
+    public stop(props: SendProps) {
         this.web.transmitter("audio:stop", props)
     }
 }
