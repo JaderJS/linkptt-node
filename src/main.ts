@@ -50,16 +50,17 @@ export class LinkPTT {
 
     private setup() {
         setTimeout(() => {
-            this.web.receiver("audio:chunk:node", (chunk: Buffer) => {
+            const speakerStream = this.audio.getSpeakerStream()
+            this.web.receiver("audio:chunk:node", (chunk: ArrayBuffer) => {
                 try {
-                    // const decoded = this.opus.decode(chunk)
-                    this.audio.getSpeakerStream().write(chunk)
+                    console.log(chunk)
+                    speakerStream.write(chunk)
                 } catch (error) {
                     console.error(error)
                 }
             })
 
-            this.web.receiver('ping:node', callback => {
+            this.web.receiver('ping:node', (callback) => {
                 callback()
             })
 
@@ -68,19 +69,20 @@ export class LinkPTT {
     }
 
     public send(path: string, { fromCuid, type }: SendProps) {
-
+        // Start stream
         this.start({ fromCuid, type })
-        //  const stream = createReadStream(path, { highWaterMark: 8 * 16 })
+
+        // Send Streams
         const stream = createReadStream(path)
         stream.on("data", (chunk: Buffer) => {
             try {
                 this.web.transmitter('audio:chunk:node', chunk)
-                // const encoded = this.opus.encode(chunk)
-                // this.web.transmitter('audio:chunk', encoded)
             } catch (error) {
                 console.error(`Error opus`, error)
             }
         })
+
+        // Stop Stream
         stream.on("end", () => {
             this.stop({ fromCuid, type })
         })
@@ -99,11 +101,25 @@ export class LinkPTT {
 
 
     public start(props: SendProps) {
-        this.web.transmitter("audio:start", props)
+        this.web.start(props)
     }
 
     public stop(props: SendProps) {
         this.web.transmitter("audio:stop", props)
+    }
+
+    public startMic({ fromCuid, type }: SendProps) {
+        this.web.start({ fromCuid, type })
+
+        this.audio.start()
+        this.audio.on('mic:chunk', (chunk) => {
+            this.web.transmitter('audio:chunk:node', chunk)
+        })
+
+        setTimeout(() => {
+            this.audio.stop()
+            this.web.transmitter("audio:stop", { fromCuid, type })
+        }, 8000)
     }
 }
 

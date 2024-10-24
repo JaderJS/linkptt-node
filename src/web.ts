@@ -49,7 +49,6 @@ export class Web {
             return
         }
         const data: TransmissionProps = { fromCuid, type, sendBy: {} }
-
         this.socket.emit(EVENTS.START, data)
     }
 
